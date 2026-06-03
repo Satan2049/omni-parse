@@ -40,7 +40,10 @@ omni-parse/
 │   ├── run-backend.bat             # Backend launcher (used by start.bat)
 │   └── run-frontend.bat            # Frontend launcher (used by start.bat)
 ├── start.bat                       # One-click Windows setup & launcher
-└── docs/architecture/
+└── docs/
+    ├── index.html                  # GitHub Pages project landing
+    ├── css/landing.css
+    └── architecture/               # Architecture documentation
 ```
 
 ## Critical Services

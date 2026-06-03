@@ -6,6 +6,8 @@
 
 Universal Page-to-Data Extractor — convert any URL or HTML into clean **Markdown**, **JSON**, or **Text** for RAG pipelines and AI training.
 
+**Project site:** Enable [GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site) from the `/docs` folder to publish the landing page at `https://<user>.github.io/omni-parse/`. Open [`docs/index.html`](docs/index.html) locally for a preview.
+
 ## Features
 
 - High-precision extraction with [Trafilatura](https://github.com/adbar/trafilatura)
@@ -67,6 +69,7 @@ omni-parse/
 ├── backend/              # FastAPI extraction & conversion API
 ├── frontend/             # Next.js UI with live preview
 ├── scripts/              # Helper launch scripts for start.bat
+├── docs/                 # GitHub Pages landing + architecture docs
 ├── docs/architecture/    # Architecture documentation
 ├── start.bat             # One-click Windows launcher
 ├── LICENSE

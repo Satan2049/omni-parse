@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OmniParse — Universal Page-to-Data Extractor</title>
+    <meta
+      name="description"
+      content="Convert any URL or HTML into clean Markdown, JSON, or Text for RAG pipelines and AI training."
+    />
+    <meta name="theme-color" content="#0a0f1a" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="OmniParse — Universal Page-to-Data Extractor" />
+    <meta
+      property="og:description"
+      content="High-precision web extraction with optional JavaScript rendering. Built for RAG and AI workflows."
+    />
+    <meta property="og:image" content="assets/logo.svg" />
+    <link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/landing.css" />
+  </head>
+  <body>
+    <nav class="site-nav" aria-label="Primary">
+      <div class="container">
+        <a class="brand" href="#top">
+          <img src="assets/logo.svg" width="32" height="32" alt="" />
+          OmniParse
+        </a>
+        <ul class="nav-links">
+          <li><a href="#features">Features</a></li>
+          <li><a href="#how-it-works">How it works</a></li>
+          <li><a href="#api">API</a></li>
+          <li><a href="#quick-start">Quick start</a></li>
+          <li>
+            <a
+              class="btn btn-primary"
+              href="https://github.com/Satan2049/omni-parse"
+              target="_blank"
+              rel="noopener noreferrer"
+              >View on GitHub</a
+            >
+          </li>
+        </ul>
+      </div>
+    </nav>
+
+    <main id="top">
+      <header class="hero">
+        <div class="container">
+          <p class="eyebrow">Open source · MIT</p>
+          <h1>Universal Page-to-Data Extractor</h1>
+          <p class="lead">
+            Turn any URL or HTML into clean <strong>Markdown</strong>,
+            <strong>JSON</strong>, or <strong>plain text</strong> — ready for RAG
+            pipelines, datasets, and AI training workflows.
+          </p>
+          <div class="hero-actions">
+            <a
+              class="btn btn-primary"
+              href="https://github.com/Satan2049/omni-parse#quick-start-windows"
+              >Get started</a
+            >
+            <a
+              class="btn btn-ghost"
+              href="https://github.com/Satan2049/omni-parse/blob/main/README.md"
+              >Read the docs</a
+            >
+          </div>
+          <div class="badges" aria-label="Project badges">
+            <a href="https://github.com/Satan2049/omni-parse/blob/main/LICENSE">
+              <img
+                src="https://img.shields.io/badge/License-MIT-emerald.svg"
+                alt="License: MIT"
+              />
+            </a>
+            <img
+              src="https://img.shields.io/badge/python-3.11+-blue.svg"
+              alt="Python 3.11+"
+            />
+            <img
+              src="https://img.shields.io/badge/Next.js-15-black.svg"
+              alt="Next.js 15"
+            />
+            <img
+              src="https://img.shields.io/badge/FastAPI-009688.svg?logo=fastapi&logoColor=white"
+              alt="FastAPI"
+            />
+          </div>
+        </div>
+      </header>
+
+      <section id="features" aria-labelledby="features-heading">
+        <div class="container">
+          <h2 id="features-heading" class="section-title">Built for real extraction work</h2>
+          <p class="section-desc">
+            OmniParse pairs a precision extraction engine with a split-screen UI so
+            you can inspect output before it hits your pipeline.
+          </p>
+          <div class="grid-3">
+            <article class="card">
+              <div class="icon" aria-hidden="true">◎</div>
+              <h3>High-precision content</h3>
+              <p>
+                Powered by
+                <a href="https://github.com/adbar/trafilatura" target="_blank" rel="noopener"
+                  >Trafilatura</a
+                >
+                for article-grade Markdown and metadata from noisy pages.
+              </p>
+            </article>
+            <article class="card">
+              <div class="icon" aria-hidden="true">⚡</div>
+              <h3>Optional JS rendering</h3>
+              <p>
+                Playwright-backed fetching when static HTML is not enough — toggle
+                JavaScript rendering from the workspace.
+              </p>
+            </article>
+            <article class="card">
+              <div class="icon" aria-hidden="true">⬡</div>
+              <h3>Multimodal-ready</h3>
+              <p>
+                Collect image URLs alongside text for multimodal RAG and vision
+                workflows without a separate scraper.
+              </p>
+            </article>
+            <article class="card">
+              <div class="icon" aria-hidden="true">↗</div>
+              <h3>Flexible exports</h3>
+              <p>
+                Preview Markdown, JSON, or plain text live — then download as PDF,
+                TXT, MD, or structured JSON.
+              </p>
+            </article>
+            <article class="card">
+              <div class="icon" aria-hidden="true">◫</div>
+              <h3>Split-screen UI</h3>
+              <p>
+                Next.js workspace with live preview, advanced fetch options, and API
+                health at a glance.
+              </p>
+            </article>
+            <article class="card">
+              <div class="icon" aria-hidden="true">⎈</div>
+              <h3>Self-hosted API</h3>
+              <p>
+                FastAPI backend you run locally or deploy yourself — no vendor lock-in
+                for extraction.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="how-it-works" aria-labelledby="flow-heading">
+        <div class="container">
+          <h2 id="flow-heading" class="section-title">How it works</h2>
+          <p class="section-desc">
+            A simple pipeline from input to RAG-ready artifacts.
+          </p>
+          <div class="flow">
+            <div class="flow-step">
+              <span class="flow-num">01</span>
+              <div>
+                <strong>Paste a URL or HTML</strong>
+                <span>Use the Next.js workspace — configure timeouts, user-agent, and JS rendering.</span>
+              </div>
+            </div>
+            <div class="flow-step">
+              <span class="flow-num">02</span>
+              <div>
+                <strong>Fetch &amp; extract</strong>
+                <span>httpx or Playwright fetches the page; Trafilatura extracts title, body, metadata, and images.</span>
+              </div>
+            </div>
+            <div class="flow-step">
+              <span class="flow-num">03</span>
+              <div>
+                <strong>Preview &amp; export</strong>
+                <span>Inspect Markdown, JSON, or text in the preview panel — download or convert via the API.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="api" aria-labelledby="api-heading">
+        <div class="container">
+          <h2 id="api-heading" class="section-title">HTTP API</h2>
+          <p class="section-desc">
+            Integrate extraction into scripts and automation. Interactive docs at
+            <code>/docs</code> when the server is running.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Method</th>
+                  <th scope="col">Path</th>
+                  <th scope="col">Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="method">POST</span></td>
+                  <td><code>/extract</code></td>
+                  <td>Extract title, markdown, metadata, and image URLs</td>
+                </tr>
+                <tr>
+                  <td><span class="method">POST</span></td>
+                  <td><code>/convert</code></td>
+                  <td>Convert text or markdown to PDF, TXT, or MD download</td>
+                </tr>
+                <tr>
+                  <td><span class="method">GET</span></td>
+                  <td><code>/health</code></td>
+                  <td>Health check for orchestration and the UI status badge</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="code-panel" aria-label="Example extract request">
+            <pre><span class="comment"># Example: extract from a URL</span>
+curl -X POST http://localhost:8000/extract \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://example.com/article", "render_js": false}'</pre>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="stack-heading">
+        <div class="container">
+          <h2 id="stack-heading" class="section-title">Tech stack</h2>
+          <p class="section-desc">Monorepo: FastAPI backend + Next.js frontend.</p>
+          <div class="pills">
+            <span class="pill">FastAPI</span>
+            <span class="pill">Trafilatura</span>
+            <span class="pill">BeautifulSoup4</span>
+            <span class="pill">Playwright</span>
+            <span class="pill">ReportLab</span>
+            <span class="pill pill-accent">Next.js 15</span>
+            <span class="pill pill-accent">TypeScript</span>
+            <span class="pill pill-accent">Tailwind CSS</span>
+            <span class="pill pill-accent">shadcn/ui</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="quick-start" aria-labelledby="start-heading">
+        <div class="container">
+          <h2 id="start-heading" class="section-title">Quick start (Windows)</h2>
+          <p class="section-desc">
+            Prerequisites: Python 3.11+ and Node.js 20+. Double-click
+            <code>start.bat</code> in the repo root.
+          </p>
+          <div class="code-panel">
+            <pre><span class="comment"># Services after launch</span>
+UI       →  http://localhost:3000
+API      →  http://localhost:8000
+API Docs →  http://localhost:8000/docs</pre>
+          </div>
+          <p style="margin-top: 1.5rem; color: var(--muted); font-size: 0.95rem">
+            Prefer manual setup? See the
+            <a href="https://github.com/Satan2049/omni-parse#manual-setup">README</a>
+            for backend and frontend steps on macOS and Linux.
+          </p>
+        </div>
+      </section>
+
+      <section aria-labelledby="cta-heading">
+        <div class="container">
+          <div class="cta">
+            <h2 id="cta-heading">Ready to extract?</h2>
+            <p>
+              Clone the repo, run locally in minutes, and ship cleaner training data
+              from the open web.
+            </p>
+            <a
+              class="btn btn-primary"
+              href="https://github.com/Satan2049/omni-parse"
+              target="_blank"
+              rel="noopener noreferrer"
+              >Star &amp; clone on GitHub</a
+            >
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <p>© OmniParse Contributors · <a href="https://github.com/Satan2049/omni-parse/blob/main/LICENSE">MIT</a></p>
+        <ul class="footer-links">
+          <li><a href="https://github.com/Satan2049/omni-parse/blob/main/README.md">README</a></li>
+          <li><a href="https://github.com/Satan2049/omni-parse/blob/main/CONTRIBUTING.md">Contributing</a></li>
+          <li><a href="https://github.com/Satan2049/omni-parse/blob/main/SECURITY.md">Security</a></li>
+          <li><a href="https://github.com/Satan2049/omni-parse/issues">Issues</a></li>
+        </ul>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="OmniParse">
+  <rect width="64" height="64" rx="14" fill="hsl(222, 40%, 9%)"/>
+  <path d="M18 44V20h6.5l9.5 14.2V20H40v24h-6.5L24 29.8V44H18z" fill="hsl(160, 84%, 45%)"/>
+  <circle cx="48" cy="22" r="4" fill="hsl(262, 83%, 68%)" opacity="0.9"/>
+  <path d="M44 36h12v8H44z" fill="hsl(160, 84%, 45%)" opacity="0.35"/>
+</svg>
