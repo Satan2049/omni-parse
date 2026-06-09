@@ -1,10 +1,16 @@
 # Security Policy
 
+## Verify downloads
+
+See [docs/TRUST.md](docs/TRUST.md) for SHA-256 checksums ([SHA256.txt](SHA256.txt)) and VirusTotal guidance.
+
 ## Supported Versions
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 0.1.x   | :white_check_mark: |
+| 1.5.x   | :white_check_mark: |
+| 1.1.x   | :white_check_mark: |
+| 1.0.x   | :white_check_mark: |
 
 ## Reporting a Vulnerability
 
@@ -27,4 +33,4 @@ OmniParse fetches user-supplied URLs server-side. Deployments should:
 
 - Run the API on trusted networks or behind authentication for production use
 - Restrict outbound network access if operating in sensitive environments
-- Keep dependencies updated via `pip install -U -r requirements.txt` and `npm update`
+- Keep dependencies updated via `cargo update` (in `frontend/src-tauri`) and `npm update` (in `frontend`)

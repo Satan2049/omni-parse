@@ -1,0 +1,13 @@
+﻿# OmniParse source SHA-256 checksums
+# Generated: 2026-06-09 22:09:20 +03:30
+# Verify (Windows): certutil -hashfile <file> SHA256
+# Verify (PowerShell): (Get-FileHash <file> -Algorithm SHA256).Hash.ToLower()
+
+d01ae8864659e0261b5e6ed77b02e31a9335113476c349c56ff24d797e183373  start.bat
+c890856aecb369af2aada8560142688e52484725f5553ba3955631fd06de1e70  scripts\run-backend.bat
+89a49f20079c7a6de371ca9942811974c6b476f06fadfe003b9fc7cdcc13b55f  scripts\run-frontend.bat
+b32b41e74c99a2aea21ef549c9ac082d07015ebc71e233aef79510576ae5a069  scripts\build-desktop.ps1
+2e7fca35210975a05cbce9c121cf2a54e1335f0dfc1ba906fb34dd76c74409e1  scripts\generate-sha256.ps1
+12c1cfbf13584b5106ad2459e3a3b3c85da0a8efb98012055c796b17f116dd9f  Cargo.toml
+c7e30f6e91e8d55484ccd4188505fbffab8131652347ad3d987b0107fafdd862  crates\omniparse-core\Cargo.toml
+61477d0500f13aaa2550e1ca38c6fda16c8a6f8192ab34d56bbad34005f098d2  LICENSE

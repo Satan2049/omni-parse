@@ -10,6 +10,8 @@ export function buildJsonPayload(result: ExtractResponse): Record<string, unknow
     content_markdown: result.content_markdown,
     content_text: result.content_text ?? result.content_markdown,
     metadata: result.metadata,
+    images: result.images,
+    files: result.files,
   };
 }
 

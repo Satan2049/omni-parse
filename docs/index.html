@@ -53,7 +53,7 @@
     <main id="top">
       <header class="hero">
         <div class="container">
-          <p class="eyebrow">Open source · MIT</p>
+          <p class="eyebrow">v1.5.0 · Open source · MIT</p>
           <h1>Universal Page-to-Data Extractor</h1>
           <p class="lead">
             Turn any URL or HTML into clean <strong>Markdown</strong>,
@@ -80,17 +80,23 @@
               />
             </a>
             <img
-              src="https://img.shields.io/badge/python-3.11+-blue.svg"
-              alt="Python 3.11+"
+              src="https://img.shields.io/badge/Rust-stable-orange.svg"
+              alt="Rust"
             />
             <img
               src="https://img.shields.io/badge/Next.js-15-black.svg"
               alt="Next.js 15"
             />
             <img
-              src="https://img.shields.io/badge/FastAPI-009688.svg?logo=fastapi&logoColor=white"
-              alt="FastAPI"
+              src="https://img.shields.io/badge/Tauri-2-blue.svg"
+              alt="Tauri 2"
             />
+            <a href="https://github.com/Satan2049/omni-parse/blob/main/CHANGELOG.md">
+              <img
+                src="https://img.shields.io/badge/version-1.5.0-emerald.svg"
+                alt="Version 1.5.0"
+              />
+            </a>
           </div>
         </div>
       </header>
@@ -99,7 +105,7 @@
         <div class="container">
           <h2 id="features-heading" class="section-title">Built for real extraction work</h2>
           <p class="section-desc">
-            OmniParse pairs a precision extraction engine with a split-screen UI so
+            OmniParse pairs a native Rust extraction engine with a split-screen UI so
             you can inspect output before it hits your pipeline.
           </p>
           <div class="grid-3">
@@ -107,27 +113,24 @@
               <div class="icon" aria-hidden="true">◎</div>
               <h3>High-precision content</h3>
               <p>
-                Powered by
-                <a href="https://github.com/adbar/trafilatura" target="_blank" rel="noopener"
-                  >Trafilatura</a
-                >
-                for article-grade Markdown and metadata from noisy pages.
+                Powered by a Rust readability pipeline for article-grade Markdown
+                and metadata from noisy pages.
               </p>
             </article>
             <article class="card">
               <div class="icon" aria-hidden="true">⚡</div>
               <h3>Optional JS rendering</h3>
               <p>
-                Playwright-backed fetching when static HTML is not enough — toggle
-                JavaScript rendering from the workspace.
+                Headless Chrome or Edge via CDP when static HTML is not enough —
+                toggle JavaScript rendering from the workspace.
               </p>
             </article>
             <article class="card">
               <div class="icon" aria-hidden="true">⬡</div>
-              <h3>Multimodal-ready</h3>
+              <h3>Full-size images</h3>
               <p>
-                Collect image URLs alongside text for multimodal RAG and vision
-                workflows without a separate scraper.
+                Resolve the largest <code>srcset</code> and lazy-load URLs, expand
+                lightboxes, deep gallery crawl, and save images from the UI.
               </p>
             </article>
             <article class="card">
@@ -148,10 +151,10 @@
             </article>
             <article class="card">
               <div class="icon" aria-hidden="true">⎈</div>
-              <h3>Self-hosted API</h3>
+              <h3>Compact desktop app</h3>
               <p>
-                FastAPI backend you run locally or deploy yourself — no vendor lock-in
-                for extraction.
+                Single <code>omniparse.exe</code> with an embedded Rust API — no
+                Python runtime, fast cold start, ~23 MB release binary.
               </p>
             </article>
           </div>
@@ -176,7 +179,7 @@
               <span class="flow-num">02</span>
               <div>
                 <strong>Fetch &amp; extract</strong>
-                <span>httpx or Playwright fetches the page; Trafilatura extracts title, body, metadata, and images.</span>
+                <span>reqwest or headless Chrome/Edge fetches the page; the readability engine extracts title, body, metadata, and images.</span>
               </div>
             </div>
             <div class="flow-step">
@@ -194,8 +197,8 @@
         <div class="container">
           <h2 id="api-heading" class="section-title">HTTP API</h2>
           <p class="section-desc">
-            Integrate extraction into scripts and automation. Interactive docs at
-            <code>/docs</code> when the server is running.
+            Integrate extraction into scripts and automation. The API runs on
+            <code>http://127.0.0.1:8000</code> in dev or embedded inside the desktop app.
           </p>
           <div class="table-wrap">
             <table>
@@ -219,6 +222,21 @@
                 </tr>
                 <tr>
                   <td><span class="method">GET</span></td>
+                  <td><code>/images/download</code></td>
+                  <td>Download a resolved public image URL through the API proxy</td>
+                </tr>
+                <tr>
+                  <td><span class="method">GET</span></td>
+                  <td><code>/settings</code></td>
+                  <td>Read server arrangement values</td>
+                </tr>
+                <tr>
+                  <td><span class="method">PUT</span></td>
+                  <td><code>/settings</code></td>
+                  <td>Update arrangements (persisted to <code>.env</code>)</td>
+                </tr>
+                <tr>
+                  <td><span class="method">GET</span></td>
                   <td><code>/health</code></td>
                   <td>Health check for orchestration and the UI status badge</td>
                 </tr>
@@ -226,10 +244,10 @@
             </table>
           </div>
           <div class="code-panel" aria-label="Example extract request">
-            <pre><span class="comment"># Example: extract from a URL</span>
+            <pre><span class="comment"># Example: extract with full-size image resolution</span>
 curl -X POST http://localhost:8000/extract \
   -H "Content-Type: application/json" \
-  -d '{"url": "https://example.com/article", "render_js": false}'</pre>
+  -d '{"url": "https://example.com/gallery", "resolve_fullsize_images": true}'</pre>
           </div>
         </div>
       </section>
@@ -237,13 +255,15 @@ curl -X POST http://localhost:8000/extract \
       <section aria-labelledby="stack-heading">
         <div class="container">
           <h2 id="stack-heading" class="section-title">Tech stack</h2>
-          <p class="section-desc">Monorepo: FastAPI backend + Next.js frontend.</p>
+          <p class="section-desc">Cargo workspace: omniparse-core (Axum) + Next.js frontend + Tauri desktop.</p>
           <div class="pills">
-            <span class="pill">FastAPI</span>
-            <span class="pill">Trafilatura</span>
-            <span class="pill">BeautifulSoup4</span>
-            <span class="pill">Playwright</span>
-            <span class="pill">ReportLab</span>
+            <span class="pill">Rust</span>
+            <span class="pill">Axum</span>
+            <span class="pill">reqwest</span>
+            <span class="pill">chromiumoxide</span>
+            <span class="pill">readability</span>
+            <span class="pill">printpdf</span>
+            <span class="pill pill-accent">Tauri 2</span>
             <span class="pill pill-accent">Next.js 15</span>
             <span class="pill pill-accent">TypeScript</span>
             <span class="pill pill-accent">Tailwind CSS</span>
@@ -256,19 +276,22 @@ curl -X POST http://localhost:8000/extract \
         <div class="container">
           <h2 id="start-heading" class="section-title">Quick start (Windows)</h2>
           <p class="section-desc">
-            Prerequisites: Python 3.11+ and Node.js 20+. Double-click
+            Prerequisites: <a href="https://rustup.rs/">Rust</a>, Node.js 20+, and
+            Google Chrome or Microsoft Edge (for JS rendering). Double-click
             <code>start.bat</code> in the repo root.
           </p>
           <div class="code-panel">
             <pre><span class="comment"># Services after launch</span>
 UI       →  http://localhost:3000
 API      →  http://localhost:8000
-API Docs →  http://localhost:8000/docs</pre>
+
+<span class="comment"># Desktop installer (release)</span>
+.\scripts\build-desktop.ps1</pre>
           </div>
           <p style="margin-top: 1.5rem; color: var(--muted); font-size: 0.95rem">
             Prefer manual setup? See the
             <a href="https://github.com/Satan2049/omni-parse#manual-setup">README</a>
-            for backend and frontend steps on macOS and Linux.
+            for API, frontend, and Tauri build steps.
           </p>
         </div>
       </section>
@@ -297,8 +320,12 @@ API Docs →  http://localhost:8000/docs</pre>
       <div class="container">
         <p>© OmniParse Contributors · <a href="https://github.com/Satan2049/omni-parse/blob/main/LICENSE">MIT</a></p>
         <ul class="footer-links">
+          <li><a href="https://github.com/Satan2049/omni-parse/blob/main/CHANGELOG.md">Changelog</a></li>
           <li><a href="https://github.com/Satan2049/omni-parse/blob/main/README.md">README</a></li>
           <li><a href="https://github.com/Satan2049/omni-parse/blob/main/CONTRIBUTING.md">Contributing</a></li>
+          <li><a href="https://github.com/Satan2049/omni-parse/blob/main/SHA256.txt">SHA256.txt</a></li>
+          <li><a href="https://github.com/Satan2049/omni-parse/blob/main/docs/TRUST.md">Trust</a></li>
+          <li><a href="https://www.virustotal.com/gui/home/upload">VirusTotal</a></li>
           <li><a href="https://github.com/Satan2049/omni-parse/blob/main/SECURITY.md">Security</a></li>
           <li><a href="https://github.com/Satan2049/omni-parse/issues">Issues</a></li>
         </ul>

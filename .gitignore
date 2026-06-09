@@ -1,13 +1,3 @@
-# Python
-__pycache__/
-*.py[cod]
-*.egg-info/
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-backend/.venv/
-backend/.env
-
 # Node / Next.js
 node_modules/
 frontend/.next/
@@ -27,3 +17,11 @@ Thumbs.db
 dist/
 build/
 coverage/
+target/
+frontend/src-tauri/target/
+frontend/.next/
+frontend/out/
+
+# Old / debug leftovers
+backend-out.txt
+backend-err.txt

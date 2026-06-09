@@ -23,7 +23,7 @@ assignees: ''
 ## Environment
 
 - OS:
-- Python version:
+- Rust toolchain version (`rustc --version`):
 - Node version:
 - Browser (if UI issue):
 

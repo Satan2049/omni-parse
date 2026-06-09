@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Globe, Sparkles } from "lucide-react";
 
 import { AdvancedOptions } from "@/components/advanced-options";
+import { ArrangementsPanel } from "@/components/arrangements-panel";
 import { PreviewPanel } from "@/components/preview-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,8 +28,11 @@ export function ExtractorWorkspace() {
   const [baseUrl, setBaseUrl] = useState("");
   const [inputMode, setInputMode] = useState<"url" | "html">("url");
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [arrangementsOpen, setArrangementsOpen] = useState(false);
   const [renderJs, setRenderJs] = useState(false);
   const [extractImages, setExtractImages] = useState(true);
+  const [resolveFullsizeImages, setResolveFullsizeImages] = useState(false);
+  const [resolveDeep, setResolveDeep] = useState(false);
   const [outputFormat, setOutputFormat] = useState<OutputFormat>("md");
   const [result, setResult] = useState<ExtractResponse | null>(null);
   const [extractError, setExtractError] = useState<string | null>(null);
@@ -64,6 +68,8 @@ export function ExtractorWorkspace() {
               url: url.trim(),
               render_js: renderJs,
               extract_images: extractImages,
+              resolve_fullsize_images: resolveFullsizeImages,
+              resolve_deep: resolveDeep,
               output_format: outputFormat,
             }
           : {
@@ -204,12 +210,18 @@ export function ExtractorWorkspace() {
           onRenderJsChange={setRenderJs}
           extractImages={extractImages}
           onExtractImagesChange={setExtractImages}
+          resolveFullsizeImages={resolveFullsizeImages}
+          onResolveFullsizeImagesChange={setResolveFullsizeImages}
+          resolveDeep={resolveDeep}
+          onResolveDeepChange={setResolveDeep}
           outputFormat={outputFormat}
           onOutputFormatChange={(format) => {
             setOutputFormat(format);
             if (result) clearResult();
           }}
         />
+
+        <ArrangementsPanel open={arrangementsOpen} onOpenChange={setArrangementsOpen} />
 
         <div className="flex gap-2">
           <Button

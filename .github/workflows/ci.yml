@@ -7,28 +7,22 @@ on:
     branches: [main, master]
 
 jobs:
-  backend:
+  api:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
         with:
-          python-version: "3.12"
-          cache: pip
-          cache-dependency-path: backend/requirements.txt
+          workspaces: .
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+      - name: Build Rust API
+        run: cargo build --release --bin omniparse-server
 
-      - name: Verify imports
-        run: python -c "from app.main import app; assert app is not None"
-
-      - name: Run tests
-        run: pytest -q
+      - name: Build desktop crate
+        run: cargo build --release -p omniparse
 
   frontend:
     runs-on: ubuntu-latest

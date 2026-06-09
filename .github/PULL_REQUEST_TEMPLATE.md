@@ -11,7 +11,7 @@
 
 ## Test plan
 
-- [ ] Backend starts with `uvicorn app.main:app --reload`
+- [ ] API builds and runs (`cargo run --bin omniparse-server` in `frontend/src-tauri`)
 - [ ] Frontend starts with `npm run dev`
 - [ ] Manual extraction tested with a sample URL
 

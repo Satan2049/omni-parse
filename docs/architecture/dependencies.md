@@ -1,19 +1,19 @@
 # Dependencies
 
-## Backend (`backend/requirements.txt`)
+## Rust API (`frontend/src-tauri/Cargo.toml`)
 
-| Package            | Purpose                              |
-|--------------------|--------------------------------------|
-| fastapi            | Web framework                        |
-| uvicorn            | ASGI server                          |
-| pydantic           | Request/response validation          |
-| trafilatura        | High-precision text extraction       |
-| beautifulsoup4     | HTML parsing for images              |
-| lxml               | Fast HTML parser backend             |
-| httpx              | Async HTTP client for URL fetching   |
-| playwright         | JS rendering (optional)              |
-| reportlab          | PDF generation                       |
-| python-multipart   | Form data support                    |
+| Crate            | Purpose                              |
+|------------------|--------------------------------------|
+| axum             | HTTP API framework                   |
+| tokio            | Async runtime                        |
+| reqwest          | Async HTTP client for URL fetching   |
+| chromiumoxide    | Headless Chrome/Edge (CDP)           |
+| readability      | Article content extraction           |
+| html2md          | HTML → Markdown                      |
+| scraper          | HTML parsing and selectors           |
+| printpdf         | PDF generation                       |
+| serde / serde_json | Request/response types             |
+| tauri            | Desktop shell                        |
 
 ## Frontend (`frontend/package.json`)
 
@@ -27,4 +27,4 @@
 
 ## External Runtime
 
-- **Playwright Chromium** — required only when `render_js` is enabled (`playwright install chromium`)
+- **Google Chrome or Microsoft Edge** — required when `render_js`, `resolve_fullsize_images`, or `resolve_deep` is enabled. OmniParse uses the system browser via CDP; no separate Playwright install is needed.

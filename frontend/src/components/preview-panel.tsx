@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Copy, Download, FileJson, FileText, ImageIcon } from "lucide-react";
+import { Check, Copy, Download, FileJson, FileText, Files, ImageIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { ExtractResponse, OutputFormat } from "@/lib/api";
+import { downloadImage, downloadMedia, type ExtractResponse, type OutputFormat } from "@/lib/api";
 import { getPreviewContent, type DownloadKind } from "@/lib/content";
 
 interface PreviewPanelProps {
@@ -28,7 +28,37 @@ export function PreviewPanel({
   isDownloading,
 }: PreviewPanelProps) {
   const [copied, setCopied] = useState(false);
+  const [imageDownloadError, setImageDownloadError] = useState<string | null>(null);
+  const [downloadingImage, setDownloadingImage] = useState<string | null>(null);
+  const [downloadingAll, setDownloadingAll] = useState(false);
   const previewText = result ? getPreviewContent(result, outputFormat) : "";
+
+  async function handleImageDownload(imageUrl: string) {
+    setImageDownloadError(null);
+    setDownloadingImage(imageUrl);
+    try {
+      await downloadImage(imageUrl);
+    } catch (err) {
+      setImageDownloadError(err instanceof Error ? err.message : "Image download failed");
+    } finally {
+      setDownloadingImage(null);
+    }
+  }
+
+  async function handleDownloadAllImages() {
+    if (!result?.images.length) return;
+    setImageDownloadError(null);
+    setDownloadingAll(true);
+    try {
+      for (const image of result.images) {
+        await downloadImage(image);
+      }
+    } catch (err) {
+      setImageDownloadError(err instanceof Error ? err.message : "Bulk download failed");
+    } finally {
+      setDownloadingAll(false);
+    }
+  }
 
   async function handleCopy() {
     if (!previewText) return;
@@ -135,6 +165,10 @@ export function PreviewPanel({
               <ImageIcon className="mr-2 h-4 w-4" />
               Images ({result.images.length})
             </TabsTrigger>
+            <TabsTrigger value="files">
+              <Files className="mr-2 h-4 w-4" />
+              Files ({result.files.length})
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="content" className="min-h-0 flex-1">
@@ -160,8 +194,26 @@ export function PreviewPanel({
 
           <TabsContent value="images" className="min-h-0 flex-1">
             <div className="h-[480px] space-y-3 overflow-auto rounded-lg border border-white/10 bg-black/30 p-4">
+              {imageDownloadError && (
+                <p className="text-sm text-destructive-foreground">{imageDownloadError}</p>
+              )}
+              {result.images.length > 0 && (
+                <div className="flex justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={downloadingAll || downloadingImage !== null}
+                    onClick={() => void handleDownloadAllImages()}
+                  >
+                    <Download className="h-4 w-4" />
+                    {downloadingAll ? "Downloading…" : "Save all images"}
+                  </Button>
+                </div>
+              )}
               {result.images.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No images found in the extracted content.</p>
+                <p className="text-sm text-muted-foreground">
+                  No images found. Enable Extract Images and, for galleries, Resolve Full-Size Images.
+                </p>
               ) : (
                 result.images.map((image) => (
                   <div key={image} className="flex items-center gap-3 rounded-md border border-white/5 p-2">
@@ -169,7 +221,7 @@ export function PreviewPanel({
                     <img
                       src={image}
                       alt=""
-                      className="h-12 w-12 rounded object-cover"
+                      className="h-16 w-16 rounded object-cover"
                       onError={(event) => {
                         event.currentTarget.style.display = "none";
                       }}
@@ -178,10 +230,50 @@ export function PreviewPanel({
                       href={image}
                       target="_blank"
                       rel="noreferrer"
-                      className="truncate text-sm text-primary hover:underline"
+                      className="min-w-0 flex-1 truncate text-sm text-primary hover:underline"
                     >
                       {image}
                     </a>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={downloadingImage === image || downloadingAll}
+                      onClick={() => void handleImageDownload(image)}
+                    >
+                      <Download className="h-4 w-4" />
+                      {downloadingImage === image ? "Saving…" : "Save"}
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="files" className="min-h-0 flex-1">
+            <div className="h-[480px] space-y-3 overflow-auto rounded-lg border border-white/10 bg-black/30 p-4">
+              {result.files.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No PDF, video, or archive links found on this page.
+                </p>
+              ) : (
+                result.files.map((fileUrl) => (
+                  <div key={fileUrl} className="flex items-center gap-3 rounded-md border border-white/5 p-2">
+                    <a
+                      href={fileUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="min-w-0 flex-1 truncate text-sm text-primary hover:underline"
+                    >
+                      {fileUrl}
+                    </a>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => void downloadMedia(fileUrl)}
+                    >
+                      <Download className="h-4 w-4" />
+                      Save
+                    </Button>
                   </div>
                 ))
               )}

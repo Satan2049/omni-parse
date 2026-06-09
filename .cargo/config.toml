@@ -1,0 +1,3 @@
+[build]
+# Single workspace target dir — avoids a second 10+ GB cache under frontend/src-tauri/
+target-dir = "target"

@@ -29,6 +29,10 @@ interface AdvancedOptionsProps {
   onRenderJsChange: (value: boolean) => void;
   extractImages: boolean;
   onExtractImagesChange: (value: boolean) => void;
+  resolveFullsizeImages: boolean;
+  onResolveFullsizeImagesChange: (value: boolean) => void;
+  resolveDeep: boolean;
+  onResolveDeepChange: (value: boolean) => void;
   outputFormat: OutputFormat;
   onOutputFormatChange: (value: OutputFormat) => void;
 }
@@ -41,6 +45,10 @@ export function AdvancedOptions({
   onRenderJsChange,
   extractImages,
   onExtractImagesChange,
+  resolveFullsizeImages,
+  onResolveFullsizeImagesChange,
+  resolveDeep,
+  onResolveDeepChange,
   outputFormat,
   onOutputFormatChange,
 }: AdvancedOptionsProps) {
@@ -60,7 +68,7 @@ export function AdvancedOptions({
             <div>
               <Label htmlFor="render-js">Render JavaScript</Label>
               <p className="text-xs text-muted-foreground">
-                Use Playwright for SPAs and dynamic pages (slower).
+                Use headless Chrome/Edge for SPAs and dynamic pages (slower).
               </p>
             </div>
             <Switch id="render-js" checked={renderJs} onCheckedChange={onRenderJsChange} />
@@ -81,9 +89,59 @@ export function AdvancedOptions({
           <Switch
             id="extract-images"
             checked={extractImages}
-            onCheckedChange={onExtractImagesChange}
+            onCheckedChange={(value) => {
+              onExtractImagesChange(value);
+              if (!value) {
+                onResolveFullsizeImagesChange(false);
+                onResolveDeepChange(false);
+              }
+            }}
           />
         </div>
+
+        {showRenderJs ? (
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <Label htmlFor="resolve-fullsize-images">Resolve Full-Size Images (fast)</Label>
+              <p className="text-xs text-muted-foreground">
+                Scrolls the page and captures larger lazy-load / network image URLs. Usually
+                finishes in under a minute.
+              </p>
+            </div>
+            <Switch
+              id="resolve-fullsize-images"
+              checked={resolveFullsizeImages}
+              disabled={!extractImages}
+              onCheckedChange={(value) => {
+                onResolveFullsizeImagesChange(value);
+                if (!value) onResolveDeepChange(false);
+              }}
+            />
+          </div>
+        ) : null}
+
+        {showRenderJs && resolveFullsizeImages ? (
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <Label htmlFor="resolve-deep">Deep Gallery Crawl (slow)</Label>
+              <p className="text-xs text-muted-foreground">
+                Opens each gallery item and lightboxes for maximum quality. Can take several
+                minutes on large pages.
+              </p>
+            </div>
+            <Switch
+              id="resolve-deep"
+              checked={resolveDeep}
+              onCheckedChange={onResolveDeepChange}
+            />
+          </div>
+        ) : null}
+
+        {!showRenderJs && (
+          <p className="text-xs text-muted-foreground">
+            Full-size image resolution is only available when extracting from a URL.
+          </p>
+        )}
 
         <div className="space-y-2">
           <Label>Output Format</Label>

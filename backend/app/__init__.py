@@ -1,1 +1,0 @@
-"""OmniParse backend application."""
