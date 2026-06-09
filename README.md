@@ -22,6 +22,8 @@ Convert any URL or HTML into clean **Markdown**, **JSON**, or **Text** for RAG p
 
 ## Preview
 
+![OmniParse demo — extract a URL to Markdown with live preview](docs/assets/demo.gif)
+
 <table>
   <tr>
     <td align="center"><strong>Workspace</strong></td>
@@ -32,8 +34,6 @@ Convert any URL or HTML into clean **Markdown**, **JSON**, or **Text** for RAG p
     <td><img src="docs/assets/screenshot-images.png" alt="OmniParse Images tab with download actions" width="100%" /></td>
   </tr>
 </table>
-
-> Replace mock screenshots with real captures before a public release — see [docs/assets/README.md](docs/assets/README.md). Add a `docs/assets/demo.gif` screen recording for a hero demo.
 
 ---
 
