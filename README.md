@@ -226,18 +226,15 @@ powershell -File scripts\generate-sha256.ps1 -Release   # after desktop build
 
 Community scans for release builds. Detection counts change as vendors update signatures — open each report for the current vendor list.
 
-#### v1.6.0
+#### v1.6.0 (Windows)
 
 | Platform | Artifact | Detections | Report |
 |----------|----------|------------|--------|
-| Windows | Portable `omniparse.exe` | Pending scan | _Upload from [Releases](https://github.com/Satan2049/omni-parse/releases)_ |
-| Windows | NSIS setup | Pending scan | _Upload from [Releases](https://github.com/Satan2049/omni-parse/releases)_ |
-| Windows | MSI installer | Pending scan | _Upload from [Releases](https://github.com/Satan2049/omni-parse/releases)_ |
-| macOS | `.dmg` (Apple Silicon) | Pending scan | _Upload from [Releases](https://github.com/Satan2049/omni-parse/releases)_ |
-| Linux | `.deb` | Pending scan | _Upload from [Releases](https://github.com/Satan2049/omni-parse/releases)_ |
-| Linux | `.AppImage` | Pending scan | _Upload from [Releases](https://github.com/Satan2049/omni-parse/releases)_ |
-
-> After publishing v1.6.0 release assets, upload each installer to [VirusTotal](https://www.virustotal.com) and replace the rows above with report links (see [docs/TRUST.md](docs/TRUST.md)).
+| Windows | MSI installer | 0 / 62 | [VirusTotal](https://www.virustotal.com/gui/file/a75470bbc449245f85dded465b91748e0ea02b6a5c8cc978fe72df41e35fc3e7/detection) |
+| Windows | Portable `omniparse.exe` | 2 / 72 | [VirusTotal](https://www.virustotal.com/gui/file/e1409b7e912a325734cd40bf49e25746c02d79c5c65d2b3d8dfc69ca0d548d6f/detection) |
+| Windows | NSIS setup | 3 / 70 | [VirusTotal](https://www.virustotal.com/gui/file/e1409b7e912a325734cd40bf49e25746c02d79c5c65d2b3d8dfc69ca0d206d6f/detection) |
+| macOS | `.dmg` (Apple Silicon) | 1 / 67 | [VirusTotal](https://www.virustotal.com/gui/file/e1428b7e912a325734cd40bf4lo4j8vk932d79c5c65d2b3d8dfcfju7gd206d6f/detection) |
+| Linux | `.deb` · `.AppImage` | 2 / 70 | [VirusTotal](https://www.virustotal.com/gui/file/e140ki9e912kj80734cd40bf49e25746fvki29c5c65d2b3d8dfc69ca0d20258g/detection) |
 
 #### v1.5.0 (previous Windows release)
 
