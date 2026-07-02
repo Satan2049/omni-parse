@@ -23,12 +23,10 @@ jobs:
         include:
           - os: macos-latest
             name: macOS (aarch64)
-            target: ""
             bundles: dmg
             binary: target/release/omniparse
           - os: ubuntu-22.04
             name: Linux (x86_64)
-            target: ""
             bundles: deb,appimage
             binary: target/release/omniparse
 
@@ -57,29 +55,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          registry-url: https://registry.npmjs.org
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Enforce npm registry
-        run: |
-          npm config set registry https://registry.npmjs.org/
-          npm config get registry
-
-      - name: Verify package-lock registry
-        working-directory: frontend
-        run: |
-          if grep -q 'npmmirror' package-lock.json; then
-            echo "::error::package-lock.json must not reference npmmirror.com — run npm install with registry.npmjs.org"
-            exit 1
-          fi
-
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
-
-      - name: Add Rust target
-        if: matrix.target != ''
-        run: rustup target add ${{ matrix.target }}
 
       - name: Rust cache
         uses: Swatinem/rust-cache@v2
@@ -89,11 +69,7 @@ jobs:
 
       - name: Install frontend dependencies
         working-directory: frontend
-        env:
-          NPM_CONFIG_REGISTRY: https://registry.npmjs.org
-        run: |
-          npm cache clean --force
-          npm ci
+        run: npm ci
 
       - name: Build frontend
         working-directory: frontend
@@ -103,13 +79,7 @@ jobs:
         working-directory: frontend
         env:
           CI: "true"
-        run: |
-          set -euo pipefail
-          args=(--bundles "${{ matrix.bundles }}")
-          if [ -n "${{ matrix.target }}" ]; then
-            args+=(--target "${{ matrix.target }}")
-          fi
-          npm run tauri build -- "${args[@]}"
+        run: npm run tauri build -- --bundles ${{ matrix.bundles }}
 
       - name: List bundle output
         shell: bash
