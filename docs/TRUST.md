@@ -8,8 +8,8 @@ Two manifests are maintained:
 
 | File | Contents |
 |------|----------|
-| [`SHA256.txt`](../SHA256.txt) | Source tree — launchers, workspace manifest, scripts |
-| [`SHA256-release-v1.5.0.txt`](../SHA256-release-v1.5.0.txt) | Release binaries — `omniparse.exe`, NSIS installer, MSI |
+| [`SHA256.txt`](../SHA256.txt) | Source tree — launchers, workspace manifest, scripts, CI workflows |
+| [`SHA256-release-v1.6.0.txt`](../SHA256-release-v1.6.0.txt) | Release binaries — installers and portable builds (after `tauri:build` or CI) |
 
 Regenerate after code or build changes:
 
@@ -19,6 +19,11 @@ powershell -ExecutionPolicy Bypass -File scripts\generate-sha256.ps1
 
 # After npm run tauri:build — includes installer hashes
 powershell -ExecutionPolicy Bypass -File scripts\generate-sha256.ps1 -Release
+```
+
+```bash
+./scripts/generate-sha256.sh
+./scripts/generate-sha256.sh --release
 ```
 
 ### Verify a file (Windows)
@@ -34,23 +39,33 @@ Compare the output to the matching line in `SHA256.txt`.
 
 ```powershell
 (Get-FileHash "target\release\omniparse.exe" -Algorithm SHA256).Hash.ToLower()
-(Get-FileHash "target\release\bundle\nsis\OmniParse_1.5.0_x64-setup.exe" -Algorithm SHA256).Hash.ToLower()
-(Get-FileHash "target\release\bundle\msi\OmniParse_1.5.0_x64_en-US.msi" -Algorithm SHA256).Hash.ToLower()
+(Get-FileHash "target\release\bundle\nsis\OmniParse_1.6.0_x64-setup.exe" -Algorithm SHA256).Hash.ToLower()
+(Get-FileHash "target\release\bundle\msi\OmniParse_1.6.0_x64_en-US.msi" -Algorithm SHA256).Hash.ToLower()
 ```
 
-Compare against `SHA256-release-v1.5.0.txt`.
+Compare against `SHA256-release-v1.6.0.txt`.
 
-## VirusTotal (v1.5.0)
+## VirusTotal
 
-Community scans for the **v1.5.0** release build:
+Community scans for release builds. Detection counts change as vendors update signatures — open each link for the current vendor list.
+
+### v1.6.0 (Windows)
+
+| Artifact | SHA-256 | Detections | Report |
+|----------|---------|------------|--------|
+| MSI installer | `a75470bbc449245f85dded465b91748e0ea02b6a5c8cc978fe72df41e35fc3e7` | 0 / 62 | [View on VirusTotal](https://www.virustotal.com/gui/file/a75470bbc449245f85dded465b91748e0ea02b6a5c8cc978fe72df41e35fc3e7/detection) |
+| Portable `omniparse.exe` | `e1409b7e912a325734cd40bf49e25746c02d79c5c65d2b3d8dfc69ca0d548d6f` | 2 / 72 | [View on VirusTotal](https://www.virustotal.com/gui/file/e1409b7e912a325734cd40bf49e25746c02d79c5c65d2b3d8dfc69ca0d548d6f/detection) |
+| NSIS setup | `e1409b7e912a325734cd40bf49e25746c02d79c5c65d2b3d8dfc69ca0d206d6f` | 3 / 70 | [View on VirusTotal](https://www.virustotal.com/gui/file/e1409b7e912a325734cd40bf49e25746c02d79c5c65d2b3d8dfc69ca0d206d6f/detection) |
+
+macOS (`.dmg`) and Linux (`.deb`, `.AppImage`) scans will be added after the cross-platform CI build completes successfully.
+
+### v1.5.0 (Windows)
 
 | Artifact | SHA-256 | Detections | Report |
 |----------|---------|------------|--------|
 | Portable `omniparse.exe` | `7747f9dfae83b697a8c1a4eab1782fd3f91ee5c7879fd27d89191ae419c9af7c` | 1 / 71 | [View on VirusTotal](https://www.virustotal.com/gui/file/7747f9dfae83b697a8c1a4eab1782fd3f91ee5c7879fd27d89191ae419c9af7c/detection) |
 | MSI installer | `4734d63bc79e82e85c618a2ee2a876b5284f60cfc0a559c98d473b88000b676a` | See report | [View on VirusTotal](https://www.virustotal.com/gui/file/4734d63bc79e82e85c618a2ee2a876b5284f60cfc0a559c98d473b88000b676a) |
-| NSIS setup | `02d8ced2f0caa4047e88a2a7c132e8abcfeb687789880d1ed120a5df51953359` | 3 / 71 | [View on VirusTotal](https://www.virustotal.com/gui/file/02d8ced2f0caa4047e88a2a7c132e8abcfeb687789880d1ed120a5df51953359) |
-
-> Detection counts change as vendors update signatures. Open each link for the current vendor list.
+| NSIS setup | `02d8ced2f0caa4047e88a2a7c132e8abcfeb687789880d1ed120a5df51953359` | 3 / 71 | [View on VirusTotal](https://www.virustotal.com/gui/file/02d8ced2f0caa4047e88a2a7c132e8abcfeb687789880d1ed120a5df51953359/detection) |
 
 ### About antivirus flags (false positives)
 
@@ -60,13 +75,13 @@ A small number of **heuristic / ML** detections on unsigned desktop software is 
 - **No Authenticode code signing** (no publisher identity on the file)
 - **Expected behavior** for a web extractor: local HTTP API, outbound URL fetching, headless browser automation
 
-The portable exe was flagged **1/71** (Trapmine: `Malicious.high.ml.score` — an ML score, not a named virus). The NSIS installer may show **more** flags than the raw exe because packers/installers are often abused by malware and trigger broader heuristics.
+The v1.6.0 **MSI is clean (0/62)**. The portable exe shows **2/72** and the NSIS installer **3/70** — typical ML/heuristic noise on unsigned packagers. Prefer the MSI or verify SHA-256 if you want the lowest scanner count.
 
 **What we recommend:**
 
-1. Prefer verifying **SHA-256** against `SHA256-release-v1.5.0.txt` or building from source.
+1. Prefer verifying **SHA-256** against `SHA256-release-v1.6.0.txt` or building from source.
 2. Review the [open-source repository](https://github.com/Satan2049/omni-parse) — the app does not phone home or auto-download third-party binaries.
-3. If you do not trust the installer, use the **portable exe** or build locally with `scripts\build-desktop.ps1`.
+3. If you do not trust the installer, use the **portable exe** or build locally with `scripts\build-desktop.ps1` / `./scripts/build-desktop.sh`.
 4. Report false positives to the vendor via the “Feedback” link on each [VirusTotal](https://www.virustotal.com) report.
 
 Code signing (Authenticode) is planned to reduce SmartScreen and heuristic noise over time.

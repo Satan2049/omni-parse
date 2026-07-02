@@ -26,6 +26,7 @@ $sourceFiles = @(
     "scripts\generate-sha256.ps1",
     "scripts\generate-sha256.sh",
     "scripts\clean.ps1",
+    "frontend\.npmrc",
     ".github\workflows\ci.yml",
     ".github\workflows\build-desktop.yml",
     "Cargo.toml",

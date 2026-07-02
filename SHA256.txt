@@ -1,5 +1,5 @@
 ﻿# OmniParse source SHA-256 checksums
-# Generated: 2026-07-03 01:08:35 +03:30
+# Generated: 2026-07-03 01:43:13 +03:30
 # Verify (Windows): certutil -hashfile <file> SHA256
 # Verify (PowerShell): (Get-FileHash <file> -Algorithm SHA256).Hash.ToLower()
 # Verify (Linux/macOS): sha256sum <file>
@@ -9,11 +9,12 @@ b7f28bf5008b2d515055aaf994c4aad001ccbe0cec108563b56314f9813b68f9  scripts/run-ba
 89a49f20079c7a6de371ca9942811974c6b476f06fadfe003b9fc7cdcc13b55f  scripts/run-frontend.bat
 20ef94c373dbce28155e9a3035dd115097a9916bdf270e87d312bfd0d8babb42  scripts/build-desktop.ps1
 4c0a0679971b6d878aac80332344f5d1e1739fe3ba0608568d6911e6b3324fd5  scripts/build-desktop.sh
-5da0f5a432d833392aefc5735a00e96ab270c474d8025bba3c34c44c54c241eb  scripts/generate-sha256.ps1
-5c2befccca9e43ce40766edd31287bdf482961122716712650dee87fadc4d075  scripts/generate-sha256.sh
+0f3434099bc27b30fa61630c571f3c394767e55994da904d38abcad4b92a9ff9  scripts/generate-sha256.ps1
+4eeaa4af37b14d5c120e04f0fb12153a4be82a02d38b5938d43a4d980d1fe22f  scripts/generate-sha256.sh
 cd59e56894848420e574ba60e4f2399ccfeb380a4189b90cf87bf396202f6970  scripts/clean.ps1
-c307563f0798b405991d8621b564b09a7f37ee1006e74e7eaa9ef70143f422a9  .github/workflows/ci.yml
-78193aa53b960c7b012fdaed24ad5ab24d8dce9d8308812bf407a7b2562bfff6  .github/workflows/build-desktop.yml
+318005a48dd48023832c89a67fcc1f03926da16d5998197d083314a9faa414bb  frontend/.npmrc
+2a1459bae274f4cde2379292dff7d3719a23fb0d6696d74c8afb294518dc3801  .github/workflows/ci.yml
+9e2e9730f5dafcab4e835e690f1257ba2cec45cc3275ab61c12353300d8eab6c  .github/workflows/build-desktop.yml
 f1d760ee70e6644d4f92b6c3e9ddd6e41b164c154f2c35d3ff5bdb4c8671e4d4  Cargo.toml
 627c324342072ec6bab41f68112c11f59bcb3d1b0aedcb581ea55b2cba2f308c  crates/omniparse-core/Cargo.toml
 61477d0500f13aaa2550e1ca38c6fda16c8a6f8192ab34d56bbad34005f098d2  LICENSE
