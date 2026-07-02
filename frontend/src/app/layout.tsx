@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+
+import { TitleBar } from "@/components/title-bar";
+
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -14,7 +17,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body>{children}</body>
+      <body className="flex h-screen flex-col overflow-hidden">
+        <TitleBar />
+        <div className="min-h-0 flex-1 overflow-auto">{children}</div>
+      </body>
     </html>
   );
 }

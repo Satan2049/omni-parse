@@ -35,6 +35,13 @@ export interface ExtractRequest {
   output_format?: OutputFormat;
 }
 
+export interface ExtractProgress {
+  stage: string;
+  message: string;
+  current?: number;
+  total?: number;
+}
+
 export interface HealthResponse {
   status: string;
   version: string;
@@ -140,6 +147,97 @@ export async function extractContent(
   }
 
   return response.json() as Promise<ExtractResponse>;
+}
+
+function parseSseBlock(block: string): { event: string; data: string } | null {
+  if (!block.trim() || block.startsWith(":")) return null;
+  let event = "message";
+  let data = "";
+  for (const line of block.split("\n")) {
+    if (line.startsWith("event:")) event = line.slice(6).trim();
+    else if (line.startsWith("data:")) data = line.slice(5).trim();
+  }
+  if (!data) return null;
+  return { event, data };
+}
+
+export async function extractContentStream(
+  payload: ExtractRequest,
+  onProgress: (progress: ExtractProgress) => void,
+  signal?: AbortSignal,
+): Promise<ExtractResponse> {
+  const response = await fetch(`${apiBase()}/extract/stream`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "text/event-stream",
+    },
+    body: JSON.stringify(payload),
+    signal,
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseError(response));
+  }
+
+  const reader = response.body?.getReader();
+  if (!reader) {
+    throw new Error("No response stream from API");
+  }
+
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let result: ExtractResponse | null = null;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const blocks = buffer.split("\n\n");
+    buffer = blocks.pop() ?? "";
+
+    for (const block of blocks) {
+      const parsed = parseSseBlock(block);
+      if (!parsed) continue;
+
+      if (parsed.event === "progress") {
+        onProgress(JSON.parse(parsed.data) as ExtractProgress);
+      } else if (parsed.event === "complete") {
+        result = JSON.parse(parsed.data) as ExtractResponse;
+      } else if (parsed.event === "error") {
+        const err = JSON.parse(parsed.data) as { detail?: string };
+        throw new Error(err.detail ?? "Extraction failed");
+      }
+    }
+  }
+
+  if (!result) {
+    throw new Error("Extraction finished without a result");
+  }
+
+  return result;
+}
+
+export async function downloadImagesParallel(
+  imageUrls: string[],
+  concurrency = 5,
+): Promise<void> {
+  const queue = [...imageUrls];
+
+  async function worker() {
+    while (queue.length > 0) {
+      const url = queue.shift();
+      if (url) {
+        await downloadImage(url);
+      }
+    }
+  }
+
+  const workers = Array.from({ length: Math.min(concurrency, imageUrls.length) }, () =>
+    worker(),
+  );
+  await Promise.all(workers);
 }
 
 export async function convertContent(

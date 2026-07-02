@@ -4,7 +4,7 @@ use std::sync::RwLock;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 
-pub const APP_VERSION: &str = "1.5.0";
+pub const APP_VERSION: &str = "1.6.0";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppSettings {

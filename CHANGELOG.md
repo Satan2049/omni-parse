@@ -5,6 +5,29 @@ All notable changes to OmniParse are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-07-03
+
+### Added
+
+- **Extraction presets** — Fast / Standard / Deep Gallery one-click option bundles
+- **Extraction history** — last 50 runs in localStorage with re-run
+- **Live progress (SSE)** — `POST /extract/stream` with stage updates during fetch, render, and image resolution
+- **Markdown rendered preview** — Raw / Rendered toggle in the Content tab
+- **Extraction stats** — word count, image count, file count, and elapsed time after each run
+- **Keyboard shortcuts** — Ctrl+Enter extract, Ctrl+Shift+C copy, Esc cancel
+- **Drag & drop** — drop URLs, HTML files, or pasted HTML into the workspace
+- **Custom title bar** — frameless Tauri window with app-themed chrome; F11 fullscreen
+- **Virtualized preview** — smooth scrolling for large markdown/JSON payloads
+- **Parallel bulk image download** — concurrent downloads (limit 5) from the Images tab
+- **Browser session reuse** — pooled Chrome/Edge instance with 120s idle timeout
+- **Product roadmap** — [docs/vision.md](docs/vision.md) with v1.6 → v2.0 milestones
+
+### Changed
+
+- Output format can be switched client-side without re-extracting (MD / JSON / TXT)
+- API responses always include `content_markdown`, `content_text`, and `content_json`
+- App version **1.6.0** across API health, UI, and docs
+
 ## [1.5.0] - 2026-06-09
 
 ### Added
@@ -78,6 +101,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Basic image URL collection from article HTML
 - One-click Windows launcher (`start.bat`)
 
+[1.6.0]: https://github.com/Satan2049/omni-parse/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/Satan2049/omni-parse/compare/v1.1.0...v1.5.0
 [1.1.0]: https://github.com/Satan2049/omni-parse/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Satan2049/omni-parse/releases/tag/v1.0.0

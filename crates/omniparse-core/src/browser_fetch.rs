@@ -1,17 +1,20 @@
-use std::path::PathBuf;
 use std::time::Duration;
 
-use chromiumoxide::browser::{Browser, BrowserConfig};
+use chromiumoxide::browser::Browser;
 use chromiumoxide::js::EvaluationResult;
 use chromiumoxide::page::Page;
-use futures::StreamExt;
-use tokio::task::JoinHandle;
+use tokio_util::sync::CancellationToken;
 use url::Url;
 
 use crate::browser::CHROME_USER_AGENT;
+use crate::browser_pool::{
+    browser_from_session, browser_lock, friendly_browser_error, return_session, shutdown_session,
+    take_session,
+};
 use crate::config::read_settings;
 use crate::error::{AppError, AppResult};
 use crate::images::extract_images;
+use crate::progress::{emit, emit_step, ensure_not_cancelled, ProgressCallback};
 use crate::security::assert_url_is_safe;
 
 const CLICKABLE_SELECTORS: &[&str] = &[
@@ -34,95 +37,6 @@ const LIGHTBOX_IMAGE_SELECTORS: &[&str] = &[
     ".modal img",
     "[role='dialog'] img",
 ];
-
-struct BrowserSession {
-    browser: Option<Browser>,
-    handler: JoinHandle<()>,
-}
-
-fn friendly_browser_error(err: impl std::fmt::Display) -> AppError {
-    let message = err.to_string();
-    if message.contains("oneshot canceled") || message.contains("Canceled") {
-        AppError::Fetch(
-            "Browser session ended unexpectedly. Ensure Chrome or Edge is installed, close \
-             other automation windows, and retry."
-                .into(),
-        )
-    } else {
-        AppError::Fetch(message)
-    }
-}
-
-async fn shutdown_browser(mut session: BrowserSession) {
-    if let Some(mut browser) = session.browser.take() {
-        let _ = browser.close().await;
-        let _ = browser.wait().await;
-    }
-    session.handler.abort();
-}
-
-fn find_chromium_executable() -> Option<PathBuf> {
-    let candidates = [
-        r"C:\Program Files\Google\Chrome\Application\chrome.exe",
-        r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
-        r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
-        r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
-    ];
-    candidates
-        .iter()
-        .map(PathBuf::from)
-        .find(|p| p.exists())
-}
-
-async fn launch_browser() -> AppResult<BrowserSession> {
-    let executable = find_chromium_executable().ok_or_else(|| {
-        AppError::Fetch(
-            "No Chromium-based browser found. Install Google Chrome or Microsoft Edge for \
-             JavaScript rendering and image resolution."
-                .into(),
-        )
-    })?;
-
-    let profile_dir = std::env::temp_dir().join(format!("omniparse-browser-{}", std::process::id()));
-
-    let config = BrowserConfig::builder()
-        .chrome_executable(executable)
-        .no_sandbox()
-        .new_headless_mode()
-        .user_data_dir(&profile_dir)
-        .arg("--disable-blink-features=AutomationControlled")
-        .arg("--disable-dev-shm-usage")
-        .arg("--no-first-run")
-        .arg("--no-default-browser-check")
-        .arg("--disable-gpu")
-        .window_size(1920, 1080)
-        .build()
-        .map_err(|e| AppError::Fetch(format!("Browser launch config failed: {e}")))?;
-
-    let (browser, mut handler) = Browser::launch(config)
-        .await
-        .map_err(|e| AppError::Fetch(format!("Failed to launch browser: {e}")))?;
-
-    let handle = tokio::spawn(async move {
-        while let Some(event) = handler.next().await {
-            if let Err(err) = event {
-                log::warn!("Browser handler event error: {err}");
-            }
-        }
-    });
-
-    Ok(BrowserSession {
-        browser: Some(browser),
-        handler: handle,
-    })
-}
-
-fn browser_ref(session: &BrowserSession) -> AppResult<&Browser> {
-    session
-        .browser
-        .as_ref()
-        .ok_or_else(|| AppError::Fetch("Browser is not available".into()))
-}
 
 async fn configure_page(page: &Page) -> AppResult<()> {
     page.set_user_agent(CHROME_USER_AGENT)
@@ -222,28 +136,45 @@ fn parse_string_array(result: EvaluationResult) -> AppResult<Vec<String>> {
     serde_json::from_str(&raw).map_err(|e| AppError::Fetch(e.to_string()))
 }
 
-async fn click_gallery_images(page: &Page) -> AppResult<Vec<String>> {
+async fn click_gallery_images(
+    page: &Page,
+    progress: &ProgressCallback,
+    cancel: &CancellationToken,
+) -> AppResult<Vec<String>> {
     let settings = read_settings();
+    let max_clicks = settings.max_lightbox_clicks as usize;
     let mut collected = Vec::new();
     let mut seen_clicks = 0usize;
 
     for selector in CLICKABLE_SELECTORS {
-        if seen_clicks >= settings.max_lightbox_clicks as usize {
+        if seen_clicks >= max_clicks {
             break;
         }
+        ensure_not_cancelled(cancel).map_err(|_| AppError::Fetch("Extraction cancelled".into()))?;
+
         let elements = match page.find_elements(*selector).await {
             Ok(elems) => elems,
             Err(_) => continue,
         };
 
         for element in elements {
-            if seen_clicks >= settings.max_lightbox_clicks as usize {
+            if seen_clicks >= max_clicks {
                 break;
             }
+            ensure_not_cancelled(cancel).map_err(|_| AppError::Fetch("Extraction cancelled".into()))?;
+
             if element.click().await.is_err() {
                 continue;
             }
             seen_clicks += 1;
+            emit_step(
+                progress,
+                "resolving_images",
+                format!("Opening lightbox {seen_clicks} of {max_clicks}"),
+                seen_clicks as u32,
+                max_clicks as u32,
+            );
+
             tokio::time::sleep(Duration::from_millis(
                 settings.playwright_image_timeout_ms as u64,
             ))
@@ -252,7 +183,9 @@ async fn click_gallery_images(page: &Page) -> AppResult<Vec<String>> {
             if let Ok(mut lightbox) = collect_lightbox_images(page).await {
                 collected.append(&mut lightbox);
             }
-            let _ = page.evaluate("document.dispatchEvent(new KeyboardEvent('keydown', {key:'Escape', keyCode:27}))").await;
+            let _ = page
+                .evaluate("document.dispatchEvent(new KeyboardEvent('keydown', {key:'Escape', keyCode:27}))")
+                .await;
             tokio::time::sleep(Duration::from_millis(200)).await;
         }
     }
@@ -289,14 +222,25 @@ async fn gallery_detail_urls(page: &Page, base_url: &str) -> AppResult<Vec<Strin
 
 async fn crawl_gallery_pages(
     browser: &Browser,
-    seed_url: &str,
     detail_urls: Vec<String>,
+    progress: &ProgressCallback,
+    cancel: &CancellationToken,
 ) -> AppResult<Vec<String>> {
     let settings = read_settings();
     let max_pages = settings.max_gallery_pages as usize;
+    let total = detail_urls.len().min(max_pages);
     let mut images = Vec::new();
 
-    for detail_url in detail_urls.into_iter().take(max_pages) {
+    for (index, detail_url) in detail_urls.into_iter().take(max_pages).enumerate() {
+        ensure_not_cancelled(cancel).map_err(|_| AppError::Fetch("Extraction cancelled".into()))?;
+        emit_step(
+            progress,
+            "deep_crawl",
+            format!("Crawling gallery page {} of {total}", index + 1),
+            (index + 1) as u32,
+            total as u32,
+        );
+
         if assert_url_is_safe(&detail_url).is_err() {
             continue;
         }
@@ -319,69 +263,99 @@ async fn crawl_gallery_pages(
         let _ = page.close().await;
     }
 
-    // Return to seed page is optional; callers already have main HTML.
-    let _ = seed_url;
     Ok(images)
 }
 
-pub async fn render_page_html(url: &str) -> AppResult<String> {
-    assert_url_is_safe(url)?;
-    let session = launch_browser().await?;
-    let result = async {
-        let browser = browser_ref(&session)?;
-        let page = browser
-            .new_page("about:blank")
-            .await
-            .map_err(friendly_browser_error)?;
-        configure_page(&page).await?;
-        navigate(&page, url).await?;
-        auto_scroll(&page).await?;
-        page_html(&page).await
-    }
-    .await;
-    shutdown_browser(session).await;
-    result
-}
+async fn render_with_browser(
+    url: &str,
+    progress: &ProgressCallback,
+    cancel: &CancellationToken,
+    fullsize: bool,
+    deep: bool,
+) -> AppResult<(String, Option<Vec<String>>)> {
+    emit(progress, "rendering", "Launching browser session");
+    ensure_not_cancelled(cancel).map_err(|_| AppError::Fetch("Extraction cancelled".into()))?;
 
-pub async fn fetch_with_fullsize_images(url: &str, deep: bool) -> AppResult<(String, Vec<String>)> {
-    assert_url_is_safe(url)?;
-    let session = launch_browser().await?;
-    let result = async {
-        let browser = browser_ref(&session)?;
-        let page = browser
-            .new_page("about:blank")
-            .await
-            .map_err(friendly_browser_error)?;
-        configure_page(&page).await?;
-        navigate(&page, url).await?;
-        auto_scroll(&page).await?;
+    let _guard = browser_lock().await;
+    let session = take_session().await?;
+    let browser = match browser_from_session(&session) {
+        Ok(browser) => browser,
+        Err(error) => {
+            shutdown_session(session).await;
+            return Err(error);
+        }
+    };
 
-        let mut resolved = Vec::new();
+    let page = browser
+        .new_page("about:blank")
+        .await
+        .map_err(friendly_browser_error)?;
+    configure_page(&page).await?;
+
+    emit(progress, "fetching", format!("Navigating to {url}"));
+    navigate(&page, url).await?;
+
+    emit(progress, "scrolling", "Scrolling page to load lazy content");
+    auto_scroll(&page).await?;
+
+    let result: AppResult<(String, Option<Vec<String>>)> = if fullsize {
+        emit(progress, "resolving_images", "Scanning network image requests");
+        let mut image_list = Vec::new();
         if let Ok(mut network) = collect_network_images(&page).await {
-            resolved.append(&mut network);
+            image_list.append(&mut network);
         }
 
-        if let Ok(mut clicked) = click_gallery_images(&page).await {
-            resolved.append(&mut clicked);
+        if let Ok(mut clicked) = click_gallery_images(&page, progress, cancel).await {
+            image_list.append(&mut clicked);
         }
 
         if deep {
+            emit(progress, "deep_crawl", "Discovering gallery detail pages");
             if let Ok(detail_urls) = gallery_detail_urls(&page, url).await {
-                if let Ok(mut crawled) = crawl_gallery_pages(browser, url, detail_urls).await {
-                    resolved.append(&mut crawled);
+                if let Ok(mut crawled) =
+                    crawl_gallery_pages(browser, detail_urls, progress, cancel).await
+                {
+                    image_list.append(&mut crawled);
                 }
             }
             auto_scroll(&page).await.ok();
         }
 
         let html = page_html(&page).await?;
-        resolved.extend(extract_images(&html, Some(url)));
+        image_list.extend(extract_images(&html, Some(url)));
+        image_list.sort();
+        image_list.dedup();
+        Ok((html, Some(image_list)))
+    } else {
+        let html = page_html(&page).await?;
+        Ok((html, None))
+    };
 
-        resolved.sort();
-        resolved.dedup();
-        Ok((html, resolved))
+    match &result {
+        Ok(_) => return_session(session).await,
+        Err(_) => shutdown_session(session).await,
     }
-    .await;
-    shutdown_browser(session).await;
+
     result
+}
+
+pub async fn render_page_html(
+    url: &str,
+    progress: &ProgressCallback,
+    cancel: &CancellationToken,
+) -> AppResult<String> {
+    assert_url_is_safe(url)?;
+    let (html, _) = render_with_browser(url, progress, cancel, false, false).await?;
+    Ok(html)
+}
+
+pub async fn fetch_with_fullsize_images(
+    url: &str,
+    deep: bool,
+    progress: &ProgressCallback,
+    cancel: &CancellationToken,
+) -> AppResult<(String, Vec<String>)> {
+    assert_url_is_safe(url)?;
+    let (html, images) = render_with_browser(url, progress, cancel, true, deep).await?;
+    Ok((html, images.unwrap_or_default()))
 }

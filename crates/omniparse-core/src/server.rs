@@ -1,11 +1,16 @@
-use std::net::SocketAddr;
+use std::convert::Infallible;
+use std::sync::Arc;
+use std::time::Duration;
 
 use axum::extract::Query;
 use axum::http::{header, StatusCode};
+use axum::response::sse::{Event, KeepAlive, Sse};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use serde::Deserialize;
+use tokio_stream::wrappers::UnboundedReceiverStream;
+use tokio_util::sync::CancellationToken;
 use tower_http::cors::{Any, CorsLayer};
 
 use crate::config::{read_settings, AppSettings, APP_VERSION};
@@ -13,9 +18,9 @@ use crate::convert::convert_content;
 use crate::error::AppError;
 use crate::fetch::download_media_bytes;
 use crate::models::{
-    ConvertRequest, ExtractRequest, HealthResponse,
+    ConvertRequest, ExtractProgress, ExtractRequest, HealthResponse,
 };
-use crate::orchestrator::run_extraction;
+use crate::orchestrator::run_extraction_with_progress;
 use crate::settings::{apply_settings, get_public_settings};
 
 #[derive(Debug, Deserialize)]
@@ -32,6 +37,7 @@ pub fn build_router() -> Router {
     Router::new()
         .route("/health", get(health))
         .route("/extract", post(extract))
+        .route("/extract/stream", post(extract_stream))
         .route("/convert", post(convert))
         .route("/images/download", get(download_image))
         .route("/settings", get(read_settings_handler).put(update_settings_handler))
@@ -46,8 +52,48 @@ async fn health() -> Json<HealthResponse> {
 }
 
 async fn extract(Json(request): Json<ExtractRequest>) -> Result<Json<serde_json::Value>, AppError> {
-    let response = run_extraction(request).await?;
+    let response = crate::orchestrator::run_extraction(request).await?;
     Ok(Json(serde_json::to_value(response).unwrap()))
+}
+
+async fn extract_stream(
+    Json(request): Json<ExtractRequest>,
+) -> Sse<impl tokio_stream::Stream<Item = Result<Event, Infallible>>> {
+    let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+    let cancel = CancellationToken::new();
+
+    let progress: crate::progress::ProgressCallback = Arc::new({
+        let tx = tx.clone();
+        move |update: ExtractProgress| {
+            if let Ok(event) = Event::default().event("progress").json_data(update) {
+                let _ = tx.send(Ok(event));
+            }
+        }
+    });
+
+    tokio::spawn(async move {
+        match run_extraction_with_progress(request, progress, cancel).await {
+            Ok(response) => {
+                if let Ok(event) = Event::default().event("complete").json_data(response) {
+                    let _ = tx.send(Ok(event));
+                }
+            }
+            Err(error) => {
+                if let Ok(event) = Event::default().event("error").json_data(
+                    serde_json::json!({ "detail": error.to_string() }),
+                ) {
+                    let _ = tx.send(Ok(event));
+                }
+            }
+        }
+    });
+
+    let stream = UnboundedReceiverStream::new(rx);
+    Sse::new(stream).keep_alive(
+        KeepAlive::new()
+            .interval(Duration::from_secs(15))
+            .text("keep-alive"),
+    )
 }
 
 async fn convert(Json(request): Json<ConvertRequest>) -> Result<Response, AppError> {
@@ -112,7 +158,7 @@ async fn update_settings_handler(Json(patch): Json<AppSettings>) -> Json<AppSett
 
 pub async fn run_server() {
     let app = build_router();
-    let addr = SocketAddr::from(([127, 0, 0, 1], 8000));
+    let addr = std::net::SocketAddr::from(([127, 0, 0, 1], 8000));
     let listener = tokio::net::TcpListener::bind(addr)
         .await
         .expect("failed to bind API server to 127.0.0.1:8000");

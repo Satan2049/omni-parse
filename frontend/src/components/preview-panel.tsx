@@ -1,12 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Copy, Download, FileJson, FileText, Files, ImageIcon } from "lucide-react";
+import { Check, Copy, Download, Eye, FileJson, FileText, Files, ImageIcon } from "lucide-react";
 
+import { ExtractionStatsPanel } from "@/components/extraction-stats-panel";
+import { MarkdownPreview } from "@/components/markdown-preview";
+import { VirtualizedText } from "@/components/virtualized-text";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { downloadImage, downloadMedia, type ExtractResponse, type OutputFormat } from "@/lib/api";
+import {
+  downloadImagesParallel,
+  downloadMedia,
+  type ExtractResponse,
+  type OutputFormat,
+} from "@/lib/api";
 import { getPreviewContent, type DownloadKind } from "@/lib/content";
+import type { ExtractionStats } from "@/lib/stats";
 
 interface PreviewPanelProps {
   result: ExtractResponse | null;
@@ -14,6 +23,7 @@ interface PreviewPanelProps {
   isLoading: boolean;
   extractError: string | null;
   downloadError: string | null;
+  stats: ExtractionStats | null;
   onDownload: (format: DownloadKind) => void;
   isDownloading: boolean;
 }
@@ -24,19 +34,23 @@ export function PreviewPanel({
   isLoading,
   extractError,
   downloadError,
+  stats,
   onDownload,
   isDownloading,
 }: PreviewPanelProps) {
   const [copied, setCopied] = useState(false);
+  const [previewMode, setPreviewMode] = useState<"raw" | "rendered">("raw");
   const [imageDownloadError, setImageDownloadError] = useState<string | null>(null);
   const [downloadingImage, setDownloadingImage] = useState<string | null>(null);
   const [downloadingAll, setDownloadingAll] = useState(false);
   const previewText = result ? getPreviewContent(result, outputFormat) : "";
+  const markdownSource = result?.content_markdown ?? "";
 
   async function handleImageDownload(imageUrl: string) {
     setImageDownloadError(null);
     setDownloadingImage(imageUrl);
     try {
+      const { downloadImage } = await import("@/lib/api");
       await downloadImage(imageUrl);
     } catch (err) {
       setImageDownloadError(err instanceof Error ? err.message : "Image download failed");
@@ -50,9 +64,7 @@ export function PreviewPanel({
     setImageDownloadError(null);
     setDownloadingAll(true);
     try {
-      for (const image of result.images) {
-        await downloadImage(image);
-      }
+      await downloadImagesParallel(result.images, 5);
     } catch (err) {
       setImageDownloadError(err instanceof Error ? err.message : "Bulk download failed");
     } finally {
@@ -73,6 +85,7 @@ export function PreviewPanel({
         <div>
           <p className="text-sm font-medium uppercase tracking-[0.2em] text-accent">Live Preview</p>
           <h2 className="text-2xl font-semibold">{result?.title ?? "Waiting for extraction"}</h2>
+          {stats && <div className="mt-2"><ExtractionStatsPanel stats={stats} /></div>}
         </div>
         {result && (
           <div className="flex flex-wrap gap-2">
@@ -172,24 +185,54 @@ export function PreviewPanel({
           </TabsList>
 
           <TabsContent value="content" className="min-h-0 flex-1">
-            <pre className="h-[480px] overflow-auto rounded-lg border border-white/10 bg-black/30 p-4 text-sm leading-relaxed text-foreground/90">
-              {previewText || "No content extracted."}
-            </pre>
+            {outputFormat === "md" && (
+              <div className="mb-2 flex gap-2">
+                <Button
+                  variant={previewMode === "raw" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setPreviewMode("raw")}
+                >
+                  <FileText className="h-4 w-4" />
+                  Raw
+                </Button>
+                <Button
+                  variant={previewMode === "rendered" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setPreviewMode("rendered")}
+                >
+                  <Eye className="h-4 w-4" />
+                  Rendered
+                </Button>
+              </div>
+            )}
+            <div className="h-[480px] rounded-lg border border-white/10 bg-black/30">
+              {outputFormat === "md" && previewMode === "rendered" ? (
+                <MarkdownPreview markdown={markdownSource} className="h-[480px]" />
+              ) : (
+                <VirtualizedText
+                  text={previewText || "No content extracted."}
+                  className="h-[480px] py-4"
+                />
+              )}
+            </div>
           </TabsContent>
 
           <TabsContent value="metadata" className="min-h-0 flex-1">
-            <pre className="h-[480px] overflow-auto rounded-lg border border-white/10 bg-black/30 p-4 text-sm leading-relaxed">
-              {JSON.stringify(
-                Object.fromEntries(
-                  Object.entries(result.metadata).filter(([, value]) => {
-                    if (Array.isArray(value)) return value.length > 0;
-                    return value !== null && value !== undefined && value !== "";
-                  }),
-                ),
-                null,
-                2,
-              ) || "{}"}
-            </pre>
+            <VirtualizedText
+              text={
+                JSON.stringify(
+                  Object.fromEntries(
+                    Object.entries(result.metadata).filter(([, value]) => {
+                      if (Array.isArray(value)) return value.length > 0;
+                      return value !== null && value !== undefined && value !== "";
+                    }),
+                  ),
+                  null,
+                  2,
+                ) || "{}"
+              }
+              className="h-[480px] rounded-lg border border-white/10 bg-black/30 py-4"
+            />
           </TabsContent>
 
           <TabsContent value="images" className="min-h-0 flex-1">
@@ -222,6 +265,7 @@ export function PreviewPanel({
                       src={image}
                       alt=""
                       className="h-16 w-16 rounded object-cover"
+                      loading="lazy"
                       onError={(event) => {
                         event.currentTarget.style.display = "none";
                       }}

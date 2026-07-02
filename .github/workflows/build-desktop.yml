@@ -1,0 +1,136 @@
+name: Build Desktop
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-desktop-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            name: macOS (aarch64)
+            target: ""
+            bundles: dmg
+            binary: target/release/omniparse
+          - os: ubuntu-22.04
+            name: Linux (x86_64)
+            target: ""
+            bundles: deb,appimage
+            binary: target/release/omniparse
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libssl-dev \
+            libwebkit2gtk-4.1-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libfuse2 \
+            libxdo-dev \
+            patchelf
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Add Rust target
+        if: matrix.target != ''
+        run: rustup target add ${{ matrix.target }}
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: .
+          cache-on-failure: true
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+      - name: Build Tauri app
+        working-directory: frontend
+        env:
+          CI: "true"
+        run: |
+          set -euo pipefail
+          args=(--bundles "${{ matrix.bundles }}")
+          if [ -n "${{ matrix.target }}" ]; then
+            args+=(--target "${{ matrix.target }}")
+          fi
+          npm run tauri build -- "${args[@]}"
+
+      - name: List bundle output
+        shell: bash
+        run: |
+          echo "Binary:"
+          ls -la "${{ matrix.binary }}" 2>/dev/null || ls -la target/release/ || true
+          echo "Bundles:"
+          find target/release/bundle -maxdepth 4 -type f 2>/dev/null || true
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}-binary
+          path: ${{ matrix.binary }}
+          if-no-files-found: error
+
+      - name: Upload bundles
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}-bundles
+          path: target/release/bundle/
+          if-no-files-found: warn
+
+      - name: Generate release checksums
+        shell: bash
+        run: |
+          mkdir -p checksums
+          shopt -s globstar nullglob
+          for file in "${{ matrix.binary }}" target/release/bundle/**/*; do
+            if [ -f "$file" ]; then
+              hash=$(sha256sum "$file" | awk '{print $1}')
+              echo "$hash  $file" >> "checksums/${{ matrix.os }}.sha256"
+            fi
+          done
+          cat "checksums/${{ matrix.os }}.sha256"
+
+      - name: Upload checksums
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}-checksums
+          path: checksums/
+          if-no-files-found: error

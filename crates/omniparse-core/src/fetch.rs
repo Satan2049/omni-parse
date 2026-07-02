@@ -1,9 +1,17 @@
 use crate::browser::{browser_headers, http_status_hint};
+use crate::browser_fetch::render_page_html;
 use crate::config::read_settings;
 use crate::error::{AppError, AppResult};
+use crate::progress::{emit, ProgressCallback};
 use crate::security::{assert_url_is_safe, is_valid_url};
+use tokio_util::sync::CancellationToken;
 
-pub async fn fetch_url(url: &str, render_js: bool) -> AppResult<String> {
+pub async fn fetch_url(
+    url: &str,
+    render_js: bool,
+    progress: &ProgressCallback,
+    cancel: &CancellationToken,
+) -> AppResult<String> {
     if !is_valid_url(url) {
         return Err(AppError::InvalidUrl(format!(
             "Unsupported URL scheme or malformed URL: {url}"
@@ -12,8 +20,10 @@ pub async fn fetch_url(url: &str, render_js: bool) -> AppResult<String> {
     assert_url_is_safe(url)?;
 
     if render_js {
-        return crate::browser_fetch::render_page_html(url).await;
+        return render_page_html(url, progress, cancel).await;
     }
+
+    emit(progress, "fetching", format!("Fetching {url}"));
 
     let settings = read_settings();
     let client = reqwest::Client::builder()

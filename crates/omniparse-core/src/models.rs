@@ -86,3 +86,13 @@ pub struct HealthResponse {
     pub status: &'static str,
     pub version: &'static str,
 }
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ExtractProgress {
+    pub stage: String,
+    pub message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub current: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub total: Option<u32>,
+}
