@@ -107,14 +107,24 @@ jobs:
         shell: bash
         run: |
           mkdir -p checksums
-          shopt -s globstar nullglob
-          for file in "${{ matrix.binary }}" target/release/bundle/**/*; do
-            if [ -f "$file" ]; then
-              hash=$(sha256sum "$file" | awk '{print $1}')
-              echo "$hash  $file" >> "checksums/${{ matrix.os }}.sha256"
+          outfile="checksums/${{ matrix.os }}.sha256"
+          : > "$outfile"
+          hash_file() {
+            if command -v sha256sum >/dev/null 2>&1; then
+              sha256sum "$1" | awk '{print $1}'
+            else
+              shasum -a 256 "$1" | awk '{print $1}'
             fi
-          done
-          cat "checksums/${{ matrix.os }}.sha256"
+          }
+          if [ -f "${{ matrix.binary }}" ]; then
+            echo "$(hash_file "${{ matrix.binary }}")  ${{ matrix.binary }}" >> "$outfile"
+          fi
+          if [ -d target/release/bundle ]; then
+            find target/release/bundle -type f 2>/dev/null | while IFS= read -r file; do
+              echo "$(hash_file "$file")  $file" >> "$outfile"
+            done
+          fi
+          cat "$outfile"
 
       - name: Upload checksums
         uses: actions/upload-artifact@v4
